@@ -65,7 +65,12 @@ class CellGraphicsItem(QGraphicsItem):
 	def towards_center(self, center, n):
 		# generate velocity to move the boid towards the center
 		pc = self.percievedCenter(center, n)
-		return (pc - np.array([self.X(), self.Y()])) * self.__r1_coeff
+		print(pc, ", ", self.X(), ", ", self.Y())
+		vec = pc - np.array([self.X(), self.Y()])
+		if(abs(np.linalg.norm(vec)) > 0.001):
+			return (vec / np.linalg.norm(vec)) * self.__r1_coeff
+		else:
+			return vec * self.__r1_coeff
 
 	def check_collisions(self, x, y):
 		if abs(x - self.X()) <= self.__padding and abs(y - self.Y()) <= self.__padding:
@@ -79,18 +84,25 @@ class CellGraphicsItem(QGraphicsItem):
 			y = rect.top()
 			x = rect.left()
 			v2 -= [self.X() - (x + self.__padding), self.Y() - (y + self.__padding)]
+		
+		if abs(np.linalg.norm(v2)) > 0.001:
+			return (v2 / np.linalg.norm(v2)) * self.__r2_coeff
 		return v2 * self.__r2_coeff
 
 	def match_velocity(self, vel, n):
 		pv = self.percievedVel(vel, n)
-		v3 = pv * self.__r3_coeff
+		if abs(np.linalg.norm(pv)) > 0.001:
+			v3 = (pv / np.linalg.norm(pv)) * self.__r3_coeff
+		else:
+			v3 = pv * self.__r3_coeff
 		return v3
 
 	def new_pos(self, center, vel, n):
-		v1 = center * self.__r1_coeff #self.towards_center(center, n)
+		v1 = self.towards_center(center, n) * self.__r1_coeff #self.towards_center(center, n)
 		v2 = self.avoid_collisions()
-		v3 = vel * self.__r2_coeff #self.match_velocity(vel, n)
+		v3 = vel * self.__r3_coeff #self.match_velocity(vel, n)
 
+		#print("vels: ", v1, ", ", v2, ", ", v3)
 		nv = v1 + v2 + v3
 		self.__velX = self.__velX + nv[0]
 		self.__velY = self.__velY + nv[1]
@@ -109,7 +121,7 @@ class CellGraphicsItem(QGraphicsItem):
 	def paint(self, painter, graphitem, widget):
 		painter.setBrush(self.__cellColor)
 
-		a = QPoint(self.__x, self.__y)
+		a = QPoint(int(self.__x), int(self.__y))
 		b = QPoint(self.__x + 8, self.__y + 8)
 		c = QPoint(self.__x + 16, self.__y)
 
