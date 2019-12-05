@@ -26,6 +26,7 @@ class CellGraphicsItem(QGraphicsItem):
 		self.collisions = list()
 		self.num_cells = 0
 		self.__cellColor = QColor(209, 220, 237)
+		self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 20, 20)
 
 
 	def vel(self):
@@ -44,7 +45,6 @@ class CellGraphicsItem(QGraphicsItem):
 		self.__y = y
 
 	def resetcoeffs(self, r1, r2, r3):
-		print("coeffs: ", r1, ", ", r2, ", ", r3)
 		self.__r1_coeff = r1
 		self.__r2_coeff = r2
 		self.__r3_coeff = r3
@@ -111,18 +111,16 @@ class CellGraphicsItem(QGraphicsItem):
 
 		
 		nv = v1 + v2 + v3
-		print("vels: ", v1, ", ", v2, ", ", v3, ", vel: ", nv)
+		#print("vels: ", v1, ", ", v2, ", ", v3, ", vel: ", nv)
 		#if(nv[0] < 0 or nv[1] < 0):
 		self.__velX += nv[0]
 		self.__velY += nv[1]
-		print("curr: ", self.__x, ", ", self.__y)
 		self.__x += self.__velX
 		self.__y += self.__velY
 		if(self.__x < 0 or self.__x > 256):
 			self.__velX = -self.__velX
 		if(self.__y < 0 or self.__y > 256):
 			self.__velY = -self.__velY
-		print(self.__velX, ", ", self.__velY, ", ", self.__x, self.__y)
 		
 
 	def advance(self, step):
@@ -132,20 +130,70 @@ class CellGraphicsItem(QGraphicsItem):
 		self.setPos(self.__x, self.__y)
 
 	def boundingRect(self):
-		return QRectF(self.__x - 0.5, self.__y - 0.5, 32 + 0.5, 16 + 0.5)
+		return self.__boundingRect
 
 	def paint(self, painter, graphitem, widget):
+
 		painter.setBrush(self.__cellColor)
+		if (abs(self.__velX < 0.1) and abs(self.__velY ) < 0.1):
+			painter.drawEllipse(self.__x, self.__y, 16, 16)
+			self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 20, 20)
+			return
+		if (abs(self.__velX) < 0.3 and abs(self.__velY) < 0.3):
+			if(abs(self.__velX) > abs(self.__velY)):
+				painter.drawEllipse(self.__x, self.__y, 17, 16)
+				self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 24, 20)
+			else:
+				painter.drawEllipse(self.__x, self.__y, 16, 17)
+				self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 20, 24)
+			return
+		if (abs(self.__velX) < 0.5 and abs(self.__velY) < 0.5):
+			if(abs(self.__velX) > abs(self.__velY)):
+				painter.drawEllipse(self.__x, self.__y, 18, 16)
+				self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 26, 20)
+			else:
+				painter.drawEllipse(self.__x, self.__y, 16, 18)
+				self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 20, 26)
+			return
+		p1 = np.array([self.__x, self.__y])
+		vel = np.array([self.__velX, self.__velY])
+		vel *= 1/np.linalg.norm(vel)
+		p2 = p1 - 16 * np.array(vel[0], vel[1])
+		p1_h = np.array([p1[0], p1[1], 1])
+		p2_h = np.array([p2[0], p2[1], 1])
+		l1 = np.cross(p1_h, p2_h)
+		"""
+		if(np.abs(l1[2] > 0.00001)):
+		"""
+		l1 = np.array([l1[0], l1[1]]) / l1[2]
+		
+		l1 = l1/np.linalg.norm(l1)
+ 
+		p3 = p2 - (8 * l1)
+		p4 = p2 + (8 * l1)
 
 		a = QPoint(int(self.__x), int(self.__y))
-		b = QPoint(self.__x + 16, self.__y + 16)
-		c = QPoint(self.__x + 32, self.__y)
+		
+		#print("{0}, {1}, {2}, {3}, {4}".format((self.__x, self.__y), (p3[0], p3[1]), (p4[0], p4[1]), p2, l1))
+		b = QPoint(int(p3[0]), int(p3[1]))
+		c = QPoint(int(p4[0]), int(p4[1]))
 
 		tri = QPolygonF()
 		tri.append(a)
 		tri.append(b)
 		tri.append(c)
 		painter.drawConvexPolygon(tri)
+
+		minx = min(p1[0], min(p3[0], p4[0]))
+		miny = min(p1[1], min(p3[1], p4[1]))
+
+		maxx = max(p1[0], max(p3[0], p4[0]))
+		maxy = max(p1[1], max(p3[1], p4[1]))
+
+		w = maxx - minx
+		h = maxy - miny
+
+		self.__boundingRect = QRectF(minx - 10, miny - 10, w + 20, h + 20)
 
 	def shape(self):
 		path = QPainterPath()

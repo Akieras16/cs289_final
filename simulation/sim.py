@@ -333,7 +333,7 @@ class MenuController(QDialog):
 		self.graphicsDisplayBox = QGroupBox('Simulation')
 		self.graphicsScene = QGraphicsScene()
 		self.graphicsScene.setSceneRect(0, 0, 512, 512)
-		self.add_cells(500)
+		self.add_cells(1000)
 		self.graphicsScene.setBackgroundBrush(self.backgroundColor)
 		self.graphicsView = QGraphicsView(self.graphicsScene)
 		self.graphicsView.setSceneRect(0, 0, 512, 512)
