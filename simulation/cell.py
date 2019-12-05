@@ -20,7 +20,7 @@ class CellGraphicsItem(QGraphicsItem):
 		self.__r1_coeff = max(r1, 0.01)
 		self.__r2_coeff = max(r2, 0.01)
 		self.__r3_coeff = max(r3, 0.01)
-		self.__padding = 25
+		self.__padding = 30
 		self.avpos = np.array([0, 0])
 		self.avvel = np.array([0, 0])
 		self.collisions = list()
@@ -52,7 +52,7 @@ class CellGraphicsItem(QGraphicsItem):
 	def percievedCenter(self, center, n):
 		# calculate boid's percieved center from the true center
 		cent = (center * n).astype(float)
-		cent -= [float(self.X()), float(self.Y())]
+		cent -= np.array([float(self.X()), float(self.Y())])
 		return cent / (n - 1)
 
 	def percievedVel(self, vel, n):
@@ -65,12 +65,13 @@ class CellGraphicsItem(QGraphicsItem):
 	def towards_center(self, center, n):
 		# generate velocity to move the boid towards the center
 		pc = self.percievedCenter(center, n)
-		print(pc, ", ", self.X(), ", ", self.Y())
-		vec = pc - np.array([self.X(), self.Y()])
-		if(abs(np.linalg.norm(vec)) > 0.001):
-			return (vec / np.linalg.norm(vec)) * self.__r1_coeff
+		#print(pc, ", ", self.X(), ", ", self.Y())
+		pc[0] -= self.__x
+		pc[1] -= self.__y 
+		if(abs(np.linalg.norm(pc)) > 0.001):
+			return pc * (1/np.linalg.norm(pc)) * self.__r1_coeff
 		else:
-			return vec * self.__r1_coeff
+			return pc * self.__r1_coeff
 
 	def check_collisions(self, x, y):
 		if abs(x - self.X()) <= self.__padding and abs(y - self.Y()) <= self.__padding:
@@ -78,16 +79,22 @@ class CellGraphicsItem(QGraphicsItem):
 		return False
 
 	def avoid_collisions(self):
-		v2 = np.array([0.0, 0.0])
+		v2 = [0.0, 0.0]
 		for cell in self.collisions:
 			rect = cell.boundingRect()
 			y = rect.top()
 			x = rect.left()
-			v2 -= [self.X() - (x + self.__padding), self.Y() - (y + self.__padding)]
+			
+			xc = self.__x - (x + self.__padding)
+			yc = self.__y - (y + self.__padding)
+			v2[0] -= xc
+			v2[1] -= yc
 		
 		if abs(np.linalg.norm(v2)) > 0.001:
 			return (v2 / np.linalg.norm(v2)) * self.__r2_coeff
-		return v2 * self.__r2_coeff
+		v2[0] *= self.__r2_coeff
+		v2[1] *= self.__r2_coeff
+		return v2
 
 	def match_velocity(self, vel, n):
 		pv = self.percievedVel(vel, n)
@@ -98,15 +105,24 @@ class CellGraphicsItem(QGraphicsItem):
 		return v3
 
 	def new_pos(self, center, vel, n):
-		v1 = self.towards_center(center, n) * self.__r1_coeff #self.towards_center(center, n)
+		v1 = self.towards_center(center, n)#self.towards_center(center, n)
 		v2 = self.avoid_collisions()
-		v3 = vel * self.__r3_coeff #self.match_velocity(vel, n)
+		v3 = self.match_velocity(vel, n) #self.match_velocity(vel, n)
 
-		#print("vels: ", v1, ", ", v2, ", ", v3)
+		
 		nv = v1 + v2 + v3
-		self.__velX = self.__velX + nv[0]
-		self.__velY = self.__velY + nv[1]
-		self.__x, self.__y = np.array([self.X(), self.Y()]) + np.array([self.__velX, self.__velY])
+		print("vels: ", v1, ", ", v2, ", ", v3, ", vel: ", nv)
+		#if(nv[0] < 0 or nv[1] < 0):
+		self.__velX += nv[0]
+		self.__velY += nv[1]
+		print("curr: ", self.__x, ", ", self.__y)
+		self.__x += self.__velX
+		self.__y += self.__velY
+		if(self.__x < 0 or self.__x > 256):
+			self.__velX = -self.__velX
+		if(self.__y < 0 or self.__y > 256):
+			self.__velY = -self.__velY
+		print(self.__velX, ", ", self.__velY, ", ", self.__x, self.__y)
 		
 
 	def advance(self, step):
@@ -116,14 +132,14 @@ class CellGraphicsItem(QGraphicsItem):
 		self.setPos(self.__x, self.__y)
 
 	def boundingRect(self):
-		return QRectF(self.__x - 0.5, self.__y - 0.5, 16 + 0.5, 8 + 0.5)
+		return QRectF(self.__x - 0.5, self.__y - 0.5, 32 + 0.5, 16 + 0.5)
 
 	def paint(self, painter, graphitem, widget):
 		painter.setBrush(self.__cellColor)
 
 		a = QPoint(int(self.__x), int(self.__y))
-		b = QPoint(self.__x + 8, self.__y + 8)
-		c = QPoint(self.__x + 16, self.__y)
+		b = QPoint(self.__x + 16, self.__y + 16)
+		c = QPoint(self.__x + 32, self.__y)
 
 		tri = QPolygonF()
 		tri.append(a)

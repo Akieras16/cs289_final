@@ -323,7 +323,7 @@ class MenuController(QDialog):
 		self.foregroundBrush.setStyle(Qt.SolidPattern)
 
 		for _ in range(num):
-			cpx, cpy = np.random.randint(0, 512, 2)
+			cpx, cpy = np.random.randint(0, 256, 2)
 			
 			cell = self.sceneState.addCell(cpx, cpy)
 			self.graphicsScene.addItem(cell)
