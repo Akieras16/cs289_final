@@ -17,6 +17,10 @@ class CellGraphicsItem(QGraphicsItem):
 		self.__y = y
 		self.__velX = 0.0 #random.randint(1, 10) / 10.0
 		self.__velY =  0.0 #random.randint(1, 10) / 10.0
+		self.__motility_force = np.random.randint(-10, 10, 2) * 0.1
+		self.__motility_switch = .05
+		self.__state = "nonmotile"
+		self.__motility_switch_nonmotile = 0.15
 		self.__r1_coeff = max(r1, 0.01)
 		self.__r2_coeff = max(r2, 0.01)
 		self.__r3_coeff = max(r3, 0.01)
@@ -121,11 +125,40 @@ class CellGraphicsItem(QGraphicsItem):
 			self.__velX = -self.__velX
 		if(self.__y < 0 or self.__y > 256):
 			self.__velY = -self.__velY
-		
+	
+	def switch_motile(self):
+		self.__state = "motile"
+		self.__motility_force = np.random.randint(-10, 10, 2) * 0.1
+		if np.dot(self.__motility_force, np.array([self.__velX, self.__velY]) > 0):
+			self.__motility_switch = 0.05
+		else:
+			self.__motility_switch = 0.1
+
+	def switch_nonmotile(self):
+		self.__state = "nonmotile"
 
 	def advance(self, step):
 		if (step == 0):
 			return
+
+		if(self.__state == "nonmotile"):
+			n = np.random.randint(100)
+			if(n < 100 * self.__motility_switch_nonmotile):
+				self.switch_motile()
+			else:
+				self.setPos(self.__x, self.__y)
+				return
+		elif(self.__state == "motile"):
+			n = np.random.randint(100)
+			if(n < 100 * self.__motility_switch):
+				self.switch_nonmotile()
+				self.setPos(self.__x, self.__y)
+				return
+			elif(np.dot(self.__motility_force, np.array([self.__velX, self.__velY]) > 0)):
+				self.__motility_switch = 0.05
+			else:
+				self.__motility_switch = 0.1
+
 		self.new_pos(self.avpos, self.avvel, self.num_cells)
 		self.setPos(self.__x, self.__y)
 
@@ -135,7 +168,7 @@ class CellGraphicsItem(QGraphicsItem):
 	def paint(self, painter, graphitem, widget):
 
 		painter.setBrush(self.__cellColor)
-		if (abs(self.__velX < 0.1) and abs(self.__velY ) < 0.1):
+		if (self.__state == "nonmotile" or abs(self.__velX < 0.1) and abs(self.__velY ) < 0.1):
 			painter.drawEllipse(self.__x, self.__y, 16, 16)
 			self.__boundingRect = QRectF(self.__x - 5, self.__y - 5, 20, 20)
 			return
