@@ -18,9 +18,9 @@ class CellGraphicsItem(QGraphicsItem):
 		self.__velX = 0.0 #random.randint(1, 10) / 10.0
 		self.__velY =  0.0 #random.randint(1, 10) / 10.0
 		self.__motility_force = np.random.randint(-10, 10, 2) * 0.1
-		self.__motility_switch = .05
+		self.__motility_switch = .005
 		self.__state = "nonmotile"
-		self.__motility_switch_nonmotile = 0.15
+		self.__motility_switch_nonmotile = 0.005
 		self.__r1_coeff = max(r1, 0.01)
 		self.__r2_coeff = max(r2, 0.01)
 		self.__r3_coeff = max(r3, 0.01)
@@ -130,7 +130,7 @@ class CellGraphicsItem(QGraphicsItem):
 		self.__state = "motile"
 		self.__motility_force = np.random.randint(-10, 10, 2) * 0.1
 		if np.dot(self.__motility_force, np.array([self.__velX, self.__velY]) > 0):
-			self.__motility_switch = 0.05
+			self.__motility_switch = 0.01
 		else:
 			self.__motility_switch = 0.1
 
@@ -142,20 +142,20 @@ class CellGraphicsItem(QGraphicsItem):
 			return
 
 		if(self.__state == "nonmotile"):
-			n = np.random.randint(100)
-			if(n < 100 * self.__motility_switch_nonmotile):
+			n = np.random.randint(1000)
+			if(n < 1000 * self.__motility_switch_nonmotile):
 				self.switch_motile()
 			else:
 				self.setPos(self.__x, self.__y)
 				return
 		elif(self.__state == "motile"):
-			n = np.random.randint(100)
-			if(n < 100 * self.__motility_switch):
+			n = np.random.randint(1000)
+			if(n < 1000 * self.__motility_switch):
 				self.switch_nonmotile()
 				self.setPos(self.__x, self.__y)
 				return
 			elif(np.dot(self.__motility_force, np.array([self.__velX, self.__velY]) > 0)):
-				self.__motility_switch = 0.05
+				self.__motility_switch = 0.01
 			else:
 				self.__motility_switch = 0.1
 
@@ -231,6 +231,7 @@ class CellGraphicsItem(QGraphicsItem):
 	def shape(self):
 		path = QPainterPath()
 
+		"""
 		a = QPoint(self.__x - self.__padding, self.__y - self.__padding)
 		b = QPoint(self.__x + self.__padding, self.__y - self.__padding)
 		c = QPoint(self.__x + self.__padding, self.__y + self.__padding)
@@ -242,6 +243,9 @@ class CellGraphicsItem(QGraphicsItem):
 		tri.append(c)
 		tri.append(d)
 		path.addPolygon(tri)
+		"""
+
+		path.addEllipse(self.__x, self.__y, 30, 30)
 		return path
 
 

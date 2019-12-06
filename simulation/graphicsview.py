@@ -84,6 +84,7 @@ class SceneState():
 			cell.avpos = avpos
 			cell.avvel = avvel
 			cell.num_cells = len(self.visible_cells)
+			"""
 			if(np.random.randint(self.division_rate) == 42):
 				nc = self.addCell(cell.X(), cell.Y())
 				nc.collisions = graphicsScene.collidingItems(cell)
@@ -91,6 +92,7 @@ class SceneState():
 				nc.avvel = avvel
 				nc.num_cells = len(self.visible_cells)
 				print("Cell divided!\n")
+			"""
 
 	def removeCellGraphics(self, graphicsItem, graphicsScene):
 		if not graphicsItem in self.visible_cells:
