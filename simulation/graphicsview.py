@@ -1,6 +1,7 @@
 import numpy as np 
 import sys
 from cell import CellGraphicsItem as Cell
+from PyQt5.QtCore import QObject, QDateTime, Qt, QTimer, QPoint, QRect, QRectF, QPropertyAnimation, QParallelAnimationGroup
 
 class SceneState():
 	def __init__(self, wound = False, area = 100.0, angles=2, geometry="line"):
@@ -16,6 +17,7 @@ class SceneState():
 		self.cells = list()
 		self.visible_cells = list()
 		self.cell_coords = list()
+		self.graphicsScene = None
 
 	def getGeometry(self):
 		return self.geometry
@@ -49,7 +51,7 @@ class SceneState():
 		self.iswound = wound
 
 	def updateCoeffs(self):
-		for cell in self.cells:
+		for cell in self.visible_cells:
 			cell.resetcoeffs(self.r1coeff, self.r2coeff, self.r3coeff)
 
 	def setR1(self, R1):
@@ -79,20 +81,39 @@ class SceneState():
 		avpos = self.averagePosition()
 		avvel = self.averageVelocity()
 		#print("avpos ", avpos, " avvel: ", avvel)
-		for cell in self.cells:
-			cell.collisions = graphicsScene.collidingItems(cell)
+		vx = 0
+		vy = 0
+		for cell in self.visible_cells:
+			r = QRectF(cell.Y() - 10, cell.X() - 10, 40, 40)
+			cell.collisions = graphicsScene.items(r)
 			cell.avpos = avpos
 			cell.avvel = avvel
 			cell.num_cells = len(self.visible_cells)
-			"""
-			if(np.random.randint(self.division_rate) == 42):
-				nc = self.addCell(cell.X(), cell.Y())
-				nc.collisions = graphicsScene.collidingItems(cell)
+			
+			
+			if(cell.radius == 12):
+				nc = self.addCell(cell.X() - 1, cell.Y() - 1)
+				nc.setvel(-cell.vel()[0], -cell.vel()[1])
+				cell.setX(cell.X() + 1)
+				cell.setY(cell.Y() + 1)
+				cell.radius = 8
+
+				nc.collisions = graphicsScene.items(QRectF(nc.X() - 20, nc.Y() - 20, 40, 40))
 				nc.avpos = avpos
 				nc.avvel = avvel
-				nc.num_cells = len(self.visible_cells)
-				print("Cell divided!\n")
-			"""
+				nc.num_cells = len(self.visible_cells) + 1
+				self.graphicsScene.addItem(nc)
+			v = cell.vel()
+			if(v[0] > 0):
+				vx += 1
+			elif(v[1] > 0):
+				vy += 1
+
+
+		print("{0}, {1}\n".format(vx/len(self.visible_cells), vy/len(self.visible_cells)))
+
+		print("There are {0} cells in simulation\n".format(len(self.visible_cells)))
+
 
 	def removeCellGraphics(self, graphicsItem, graphicsScene):
 		if not graphicsItem in self.visible_cells:
@@ -109,7 +130,7 @@ class SceneState():
 			self.visible_cells.append(graphicsItem)
 
 	def getCells(self):
-		return self.cells
+		return self.visible_cells
 
 	def updateCellCoords(self):
 		self.cell_coords = [[c.X(), c.Y()] for c in self.visible_cells]
@@ -120,8 +141,8 @@ class SceneState():
 			x += c.X()
 			y += c.Y()
 
-		x /= len(self.cells)
-		y /= len(self.cells)
+		x /= len(self.visible_cells)
+		y /= len(self.visible_cells)
 
 		return np.array([x, y])
 
@@ -132,8 +153,8 @@ class SceneState():
 			dx += vx
 			dy += vy
 
-		dx /= len(self.cells)
-		dy /= len(self.cells)
+		dx /= len(self.visible_cells)
+		dy /= len(self.visible_cells)
 		return np.array([dx, dy])
 
 	def updatePositions(self):
@@ -143,8 +164,8 @@ class SceneState():
 		pos_difs = list()
 		pos_comps = list()
 		
-		for cell in self.cells:
-			cell.new_pos(self.cells, avpos, avvel, len(self.cells))
+		for cell in self.visuble_cells:
+			cell.new_pos(self.visible_cells, avpos, avvel, len(self.visible_cells))
 
 	
 

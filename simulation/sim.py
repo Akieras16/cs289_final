@@ -18,6 +18,7 @@ class MenuController(QDialog):
 	def __init__(self, parent=None):
 		super(MenuController, self).__init__(parent)
 
+		self.c = 0
 		self.backgroundColor = QColor(38, 44, 105)
 		self.cellColor = QColor(209, 220, 237)
 		self.woundColor = QColor(252, 236, 0)
@@ -333,13 +334,14 @@ class MenuController(QDialog):
 		self.graphicsDisplayBox = QGroupBox('Simulation')
 		self.graphicsScene = QGraphicsScene()
 		self.graphicsScene.setSceneRect(0, 0, 512, 512)
-		self.add_cells(1000)
+		self.add_cells(2500)
 		self.graphicsScene.setBackgroundBrush(self.backgroundColor)
 		self.graphicsView = QGraphicsView(self.graphicsScene)
 		self.graphicsView.setSceneRect(0, 0, 512, 512)
 		layout = QVBoxLayout()
 		layout.addWidget(self.graphicsView)
 		self.graphicsDisplayBox.setLayout(layout)
+		self.sceneState.graphicsScene = self.graphicsScene
 
 	def cellAnimState(self, x, y):
 		a = QPoint(x, y)
@@ -354,7 +356,8 @@ class MenuController(QDialog):
 		return tri
 
 	def simulationStep(self):
-		print("running sim step!\n")
+		self.c += 1
+		print("running sim step {0}!\n".format(self.c))
 		self.sceneState.update_cell_info(self.graphicsScene)
 		self.graphicsScene.advance()
 
